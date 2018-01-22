@@ -10,9 +10,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/math"
 
-	"github.com/sammy007/open-ethereum-pool/rpc"
-	"github.com/sammy007/open-ethereum-pool/storage"
-	"github.com/sammy007/open-ethereum-pool/util"
+	"github.com/GoktugOzturk/open-musicoin-pool/rpc"
+	"github.com/GoktugOzturk/open-musicoin-pool/storage"
+	"github.com/GoktugOzturk/open-musicoin-pool/util"
 )
 
 type UnlockerConfig struct {
@@ -31,12 +31,13 @@ type UnlockerConfig struct {
 const minDepth = 16
 const byzantiumHardForkHeight = 4370000
 
-var homesteadReward = math.MustParseBig256("5000000000000000000")
-var byzantiumReward = math.MustParseBig256("3000000000000000000")
-
+var (
+	musicBlockReward     *big.Int = new(big.Int).Mul(big.NewInt(314), big.NewInt(1e+18))
+	mcip3BlockReward     *big.Int = new(big.Int).Mul(big.NewInt(250), big.NewInt(1e+18))
+)
 // Donate 10% from pool fees to developers
 const donationFee = 10.0
-const donationAccount = "0xb85150eb365e7df0941f0cf08235f987ba91506a"
+const donationAccount = "0xd757b472061100c6208d7a52b7d01b37bf533815"
 
 type BlockUnlocker struct {
 	config   *UnlockerConfig
@@ -222,10 +223,10 @@ func (u *BlockUnlocker) handleBlock(block *rpc.GetBlockReply, candidate *storage
 		reward.Add(reward, extraTxReward)
 	}
 
-	// Add reward for including uncles
-	uncleReward := getRewardForUncle(candidate.Height)
-	rewardForUncles := big.NewInt(0).Mul(uncleReward, big.NewInt(int64(len(block.Uncles))))
-	reward.Add(reward, rewardForUncles)
+	// Musicoin doesn't give uncle rewards to linked block.
+	// uncleReward := getRewardForUncle(candidate.Height)
+	// rewardForUncles := big.NewInt(0).Mul(uncleReward, big.NewInt(int64(len(block.Uncles))))
+	// reward.Add(reward, rewardForUncles)
 
 	candidate.Orphan = false
 	candidate.Hash = block.Hash
@@ -503,9 +504,9 @@ func weiToShannonInt64(wei *big.Rat) int64 {
 
 func getConstReward(height int64) *big.Int {
 	if height >= byzantiumHardForkHeight {
-		return new(big.Int).Set(byzantiumReward)
+		return new(big.Int).Set(mcip3BlockReward)
 	}
-	return new(big.Int).Set(homesteadReward)
+	return new(big.Int).Set(mcip3BlockReward)
 }
 
 func getRewardForUncle(height int64) *big.Int {
@@ -514,7 +515,7 @@ func getRewardForUncle(height int64) *big.Int {
 }
 
 func getUncleReward(uHeight, height int64) *big.Int {
-	reward := getConstReward(height)
+	reward := new(big.Int).Set(musicBlockReward)
 	k := height - uHeight
 	reward.Mul(big.NewInt(8-k), reward)
 	reward.Div(reward, big.NewInt(8))
